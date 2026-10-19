@@ -35,18 +35,24 @@ function loadScript(src) {
           const permanentHelmet = 'if (SHOW_HELMET_PERMANENTLY) {';
           const helmetWireframeAdd = 'this.settings.scene.add(this.wireframeMesh)';
           const helmetObjectSetup = 'this.instance.scale.set(6.9,6.9,7.1),';
+          const textureFormatSelection = 'iQ=window.innerWidth>991?"webp":"ktx2";';
+          const textureLoaderSelection = 'this.activeTextureLoader=window.innerWidth>991?this.customTextureLoader:this.customKtx2TextureLoader';
           if (
             !source.includes(permanentHelmet) ||
             !source.includes(helmetWireframeAdd) ||
-            !source.includes(helmetObjectSetup)
+            !source.includes(helmetObjectSetup) ||
+            !source.includes(textureFormatSelection) ||
+            !source.includes(textureLoaderSelection)
           ) {
-            throw new Error('Could not find the hero helmet shader controls');
+            throw new Error('Could not find the expected hero graphics runtime controls');
           }
           script.removeAttribute('src');
           script.textContent = source
             .replace(permanentHelmet, 'if (false) {')
             .replace(helmetObjectSetup, `${helmetObjectSetup}this.instance.visible=false,`)
-            .replace(helmetWireframeAdd, 'this.wireframeMesh.visible = false');
+            .replace(helmetWireframeAdd, 'this.wireframeMesh.visible = false')
+            .replace(textureFormatSelection, 'iQ="webp";')
+            .replace(textureLoaderSelection, 'this.activeTextureLoader=this.customTextureLoader');
           document.body.appendChild(script);
           resolve();
         })
@@ -61,6 +67,7 @@ function loadScript(src) {
 export default function App() {
   const pageRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formState, setFormState] = useState({ name: '', email: '', subject: '', message: '' });
   const [formStatus, setFormStatus] = useState(null); // 'success' | 'error' | null
@@ -97,6 +104,8 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     let heroObserver;
+    let mobileNavToggle;
+    const toggleMobileMenu = () => setMobileMenuOpen((isOpen) => !isOpen);
 
     // The original page is mounted as-is. React owns the application shell,
     // while the original DOM/CSS/runtime are preserved to avoid visual changes.
@@ -147,6 +156,16 @@ export default function App() {
         contactButton.href = '#contact';
         contactButton.removeAttribute('target');
         footer.id = 'contact';
+      }
+      const navActions = pageContent.querySelector('.btn-layout.is-nav');
+      if (navActions) {
+        mobileNavToggle = document.createElement('button');
+        mobileNavToggle.className = 'portfolio-mobile-nav-toggle';
+        mobileNavToggle.type = 'button';
+        mobileNavToggle.setAttribute('aria-label', 'Open navigation');
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.innerHTML = '<span></span><span></span><span></span>';
+        navActions.append(mobileNavToggle);
       }
       if (footer) {
         footer.querySelector('.footer-rive-w')?.remove();
@@ -518,6 +537,8 @@ export default function App() {
       });
 
       pageRef.current.replaceChildren(pageContent.cloneNode(true));
+      mobileNavToggle = pageRef.current.querySelector('.portfolio-mobile-nav-toggle');
+      mobileNavToggle?.addEventListener('click', toggleMobileMenu);
 
       const homeLink = pageRef.current.querySelector('.nav-middle');
       const mountedHeroTrack = pageRef.current.querySelector('.sticky-track.home-hero');
@@ -583,18 +604,11 @@ export default function App() {
       }
 
       const headTextures = window.landoGL?.assets?.textures?.head;
-      const isDesktop = window.innerWidth > 991;
       if (headTextures) {
-        const portraitTexture = isDesktop
-          ? customPortraits.hero
-          : '/gl/textures/head/ktx2/sasith-frontbg-atlas.ktx2?v=3';
+        const portraitTexture = customPortraits.hero;
         headTextures.diffuse = portraitTexture;
-        headTextures.alpha = isDesktop
-          ? '/gl/textures/head/webp/sasith-frontbg-alpha.png'
-          : '/gl/textures/head/ktx2/sasith-frontbg-alpha.ktx2';
-        headTextures.depth = isDesktop
-          ? '/gl/textures/head/webp/sasith-frontbg-depth.png'
-          : '/gl/textures/head/ktx2/sasith-frontbg-depth.ktx2';
+        headTextures.alpha = '/gl/textures/head/webp/sasith-frontbg-alpha.png';
+        headTextures.depth = '/gl/textures/head/webp/sasith-frontbg-depth.png';
         for (const shadowTexture of Object.keys(headTextures.shadow ?? {})) {
           headTextures.shadow[shadowTexture] = shadowTexture === 'softerEdit'
             ? customPortraits.heroAnime
@@ -603,9 +617,7 @@ export default function App() {
       }
 
       const helmetTextures = window.landoGL?.assets?.textures?.helmet;
-      const helmetLiveryTexture = isDesktop
-        ? '/gl/textures/helmet/webp/sasith-helmet-livery.png'
-        : '/gl/textures/helmet/ktx2/sasith-helmet-livery.ktx2';
+      const helmetLiveryTexture = '/gl/textures/helmet/webp/sasith-helmet-livery.png';
       if (helmetTextures) {
         for (const textureName of ['diffuseLime', 'diffuseDark', 'diffuseGrid', 'diffuseDisco', 'diffuseGoogle']) {
           if (textureName in helmetTextures) helmetTextures[textureName] = helmetLiveryTexture;
@@ -614,9 +626,7 @@ export default function App() {
 
       const glassTextures = window.landoGL?.assets?.textures?.glass;
       if (glassTextures) {
-        glassTextures.base = isDesktop
-          ? '/gl/textures/helmet/webp/sasith-visor-tint.png'
-          : '/gl/textures/helmet/ktx2/sasith-visor-tint.ktx2';
+        glassTextures.base = '/gl/textures/helmet/webp/sasith-visor-tint.png';
       }
 
       const headScene = window.landoGL?.params?.headScene;
@@ -668,8 +678,34 @@ export default function App() {
     return () => {
       cancelled = true;
       heroObserver?.disconnect();
+      mobileNavToggle?.removeEventListener('click', toggleMobileMenu);
     };
   }, []);
+
+  useEffect(() => {
+    const toggle = pageRef.current?.querySelector('.portfolio-mobile-nav-toggle');
+    toggle?.setAttribute('aria-expanded', String(mobileMenuOpen));
+    toggle?.setAttribute('aria-label', mobileMenuOpen ? 'Close navigation' : 'Open navigation');
+
+    if (!mobileMenuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        toggle?.focus();
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+    pageRef.current?.querySelector('.portfolio-mobile-menu a')?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <>
@@ -682,6 +718,31 @@ export default function App() {
 
       {/* ── Page Root ── */}
       <div id="legacy-page-root" ref={pageRef} />
+
+      {mobileMenuOpen && (
+        <nav className="portfolio-mobile-menu" aria-label="Mobile navigation">
+          <div className="portfolio-mobile-menu-header">
+            <span className="portfolio-mobile-menu-label">Navigation</span>
+            <button
+              className="portfolio-mobile-menu-close"
+              type="button"
+              aria-label="Close navigation"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div className="portfolio-mobile-menu-links">
+            <a href="#projects" onClick={() => setMobileMenuOpen(false)}>Projects</a>
+            {projectGroups.map((group) => (
+              <a key={group.id} href={`#${group.id}`} onClick={() => setMobileMenuOpen(false)}>
+                {group.name}
+              </a>
+            ))}
+            <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+          </div>
+        </nav>
+      )}
 
       {/* ── Contact Modal ── */}
       {showModal && (

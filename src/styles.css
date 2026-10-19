@@ -13,6 +13,11 @@ html, body, #root, #legacy-page-root {
   height: 3.75rem;
 }
 
+.portfolio-mobile-nav-toggle,
+.portfolio-mobile-menu {
+  display: none;
+}
+
 .portfolio-brand-serif {
   fill: currentColor;
   font-family: Georgia, 'Times New Roman', serif;
@@ -300,7 +305,7 @@ html, body, #root, #legacy-page-root {
 
 @media (max-width: 767px) {
   .portfolio-bio {
-    font-size: 5rem;
+    font-size: clamp(3.25rem, 9vw, 5rem);
   }
 
   .project-gallery {
@@ -333,11 +338,127 @@ html, body, #root, #legacy-page-root {
   .services-marquee-row.is-bottom .services-marquee-group {
     font-size: 1.25rem;
   }
+
+  .btn-layout.is-nav .btn-w {
+    display: none;
+  }
+
+  .portfolio-mobile-nav-toggle {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.32rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: var(--color--lime, #d2ff00);
+    color: var(--color--dark-green, #282c20);
+    cursor: pointer;
+  }
+
+  .portfolio-mobile-nav-toggle span {
+    display: block;
+    width: 1.1rem;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+
+  .portfolio-mobile-nav-toggle:focus-visible,
+  .portfolio-mobile-menu-close:focus-visible,
+  .portfolio-mobile-menu-links a:focus-visible {
+    outline: 2px solid var(--color--lime, #d2ff00);
+    outline-offset: 4px;
+  }
+
+  .portfolio-mobile-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: max(1.25rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+    background: var(--color--dark-green, #20231c);
+    color: var(--color--green-off-white-1, #dde1d2);
+  }
+
+  .portfolio-mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .portfolio-mobile-menu-label {
+    color: var(--color--lime, #d2ff00);
+    font-family: Mona Sans Variable, Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .portfolio-mobile-menu-close {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .portfolio-mobile-menu-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin: auto 0;
+  }
+
+  .portfolio-mobile-menu-links a {
+    max-width: 100%;
+    color: inherit;
+    font-family: Mona Sans Variable, Arial, sans-serif;
+    font-size: clamp(2rem, 9vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .portfolio-mobile-menu-links a:hover {
+    color: var(--color--lime, #d2ff00);
+  }
 }
 
 @media (max-width: 479px) {
   .portfolio-bio {
-    font-size: 3.5rem;
+    font-size: clamp(2.5rem, 10vw, 3.5rem);
+  }
+
+  .project-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .project-card-media {
+    aspect-ratio: 16 / 10;
+  }
+
+  .project-card-title {
+    padding: 0.75rem 0.5rem;
   }
 }
 
